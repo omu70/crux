@@ -3,7 +3,7 @@ from __future__ import annotations
 
 import datetime as dt
 
-from fastapi import APIRouter, Depends, HTTPException, Request, status
+from fastapi import APIRouter, Depends, File, HTTPException, Request, UploadFile, status
 from sqlalchemy.orm import Session
 
 from app.core.audit import log_action
@@ -15,6 +15,8 @@ from app.schemas import (
     ClientCreate, ClientCredentials, ClientOut, ClientUpdate, GenericOK,
     IntegrationConnect, IntegrationOut,
 )
+from app.services.meta_import import import_meta_export, parse_table
+from app.services.meta_sync import sync_meta
 
 router = APIRouter(prefix="/api/admin/clients", tags=["admin:clients"])
 
@@ -194,3 +196,64 @@ def switch_into_client(client_id: str, db: Session = Depends(get_db), admin: Use
     token = create_access_token(client.user_id, "CLIENT")
     log_action(db, user_id=admin.id, action="switch_into_client", entity="client", entity_id=client_id)
     return {"access_token": token, "token_type": "bearer", "client_id": client_id}
+
+
+# ── Meta Ads: connect + one-click sync ───────────────────────────────────────
+@router.post("/{client_id}/integrations/meta/connect", response_model=IntegrationOut)
+def connect_meta(client_id: str, body: dict,
+                 db: Session = Depends(get_db), admin: User = Depends(require_admin)):
+    """Store the client's Meta Ad Account ID (and optional per-client token).
+
+    Body: {"ad_account_id": "act_123... or 123...", "access_token": "optional"}.
+    If access_token is omitted, the server-wide META_ACCESS_TOKEN env var is used.
+    """
+    _get_client(db, client_id)
+    ad_account = (body.get("ad_account_id") or "").strip()
+    if not ad_account:
+        raise HTTPException(422, "ad_account_id is required")
+    integ = db.query(Integration).filter(
+        Integration.client_id == client_id, Integration.type == "META_ADS").first()
+    if integ is None:
+        integ = Integration(client_id=client_id, type="META_ADS")
+        db.add(integ)
+    config = {"ad_account_id": ad_account}
+    if body.get("access_token"):
+        config["access_token"] = body["access_token"]
+    integ.config = config
+    integ.account_name = ad_account
+    integ.status = "CONNECTED"
+    log_action(db, user_id=admin.id, action="connect_meta", entity="integration", entity_id=client_id, commit=False)
+    db.commit()
+    db.refresh(integ)
+    return integ
+
+
+@router.post("/{client_id}/metrics/import")
+async def import_metrics(client_id: str, file: UploadFile = File(...),
+                         db: Session = Depends(get_db), admin: User = Depends(require_admin)):
+    """Import a Meta Ads Manager CSV/Excel export → daily metrics + campaigns."""
+    client = _get_client(db, client_id)
+    content = await file.read()
+    try:
+        rows = parse_table(file.filename or "export.csv", content)
+        result = import_meta_export(db, client, rows)
+    except ValueError as exc:
+        raise HTTPException(400, str(exc))
+    except Exception as exc:
+        raise HTTPException(400, f"Could not read file: {exc}")
+    log_action(db, user_id=admin.id, action="import_meta_export", entity="client", entity_id=client_id)
+    return {"ok": True, **result}
+
+
+@router.post("/{client_id}/integrations/meta/sync")
+def meta_sync(client_id: str, db: Session = Depends(get_db), admin: User = Depends(require_admin)):
+    """Pull the latest Meta campaigns + daily metrics into the client's dashboard."""
+    client = _get_client(db, client_id)
+    try:
+        result = sync_meta(db, client)
+    except ValueError as exc:
+        raise HTTPException(400, str(exc))
+    except Exception as exc:  # network / Meta API errors
+        raise HTTPException(502, f"Meta API error: {exc}")
+    log_action(db, user_id=admin.id, action="sync_meta", entity="client", entity_id=client_id)
+    return {"ok": True, **result}

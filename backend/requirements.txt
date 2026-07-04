@@ -20,6 +20,9 @@ python-multipart==0.0.20       # form parsing + file uploads
 # HTTP client (integration API calls + tests)
 httpx==0.28.1
 
+# Spreadsheet import (Meta Ads Manager Excel exports; CSV works without it)
+openpyxl==3.1.5
+
 # ── Optional integrations (imported lazily; install only if you use them) ────
 # google-generativeai==0.8.3   # Gemini AI insights
 # resend==2.5.1                # Transactional email

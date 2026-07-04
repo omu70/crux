@@ -30,6 +30,9 @@ export default function ClientDetailPage() {
   const [metric, setMetric] = useState({ date: new Date().toISOString().slice(0, 10), revenue: 0, orders: 0, ad_spend: 0, roas: 0, leads: 0 });
   const [notif, setNotif] = useState({ title: "", message: "" });
   const [task, setTask] = useState({ title: "", priority: "MEDIUM", responsible: "", timeframe: "week" });
+  const [metaAccount, setMetaAccount] = useState("");
+  const [syncMsg, setSyncMsg] = useState("");
+  const [importMsg, setImportMsg] = useState("");
 
   useEffect(() => {
     if (client.data) {
@@ -45,6 +48,9 @@ export default function ClientDetailPage() {
   const addMetric = useMutation({ mutationFn: () => apiPost(`/admin/clients/${id}/metrics`, { date: metric.date, revenue: metric.revenue, orders: metric.orders, ad_spend: metric.ad_spend, roas: metric.roas || (metric.ad_spend ? +(metric.revenue / metric.ad_spend).toFixed(2) : 0), lead_count: metric.leads, aov: metric.orders ? +(metric.revenue / metric.orders).toFixed(2) : 0 }), onSuccess: () => flash("metric") });
   const sendNotif = useMutation({ mutationFn: () => apiPost(`/admin/notifications`, { client_id: id, title: notif.title, message: notif.message, type: "GENERAL" }), onSuccess: () => { flash("notif"); setNotif({ title: "", message: "" }); } });
   const addTask = useMutation({ mutationFn: () => apiPost(`/admin/clients/${id}/tasks`, task), onSuccess: () => { flash("task"); setTask({ title: "", priority: "MEDIUM", responsible: "", timeframe: "week" }); } });
+  const connectMeta = useMutation({ mutationFn: () => apiPost(`/admin/clients/${id}/integrations/meta/connect`, { ad_account_id: metaAccount }), onSuccess: () => { flash("meta"); qc.invalidateQueries({ queryKey: ["admin-integrations", id] }); } });
+  const syncMeta = useMutation({ mutationFn: () => apiPost(`/admin/clients/${id}/integrations/meta/sync`), onSuccess: (r: any) => setSyncMsg(`Synced ${r.campaigns_synced} campaigns · ${r.days_synced} days ✓`), onError: (e: any) => setSyncMsg(e.message) });
+  const importFile = useMutation({ mutationFn: (file: File) => { const fd = new FormData(); fd.append("file", file); return apiPost(`/admin/clients/${id}/metrics/import`, fd); }, onSuccess: (r: any) => setImportMsg(`Imported ${r.days_imported} days · ${r.campaigns_imported} campaigns ✓`), onError: (e: any) => setImportMsg(e.message) });
 
   if (client.isLoading) return <Loading />;
   const c = client.data;
@@ -99,6 +105,38 @@ export default function ClientDetailPage() {
           </CardContent>
         </Card>
 
+        {/* Meta Ads — live sync */}
+        <Card>
+          <CardHeader className="flex-row items-center justify-between"><CardTitle>Meta Ads — Live Sync</CardTitle><Saved k="meta" /></CardHeader>
+          <CardContent className="space-y-3">
+            <div className="space-y-1.5">
+              <Label>Ad Account ID</Label>
+              <Input value={metaAccount} onChange={(e) => setMetaAccount(e.target.value)} placeholder="act_1234567890" />
+            </div>
+            <div className="flex gap-2">
+              <Button size="sm" variant="outline" onClick={() => connectMeta.mutate()} disabled={!metaAccount || connectMeta.isPending}>Connect</Button>
+              <Button size="sm" onClick={() => { setSyncMsg("Syncing…"); syncMeta.mutate(); }} disabled={syncMeta.isPending}>Sync now</Button>
+            </div>
+            {syncMsg && <p className="text-xs text-muted-foreground">{syncMsg}</p>}
+            <p className="text-xs text-muted-foreground">Set <code>META_ACCESS_TOKEN</code> on the server, connect the Ad Account ID, then Sync to pull campaigns + daily spend/ROAS/CPA into the dashboard.</p>
+          </CardContent>
+        </Card>
+
+        {/* Bulk import — Meta Ads Manager export */}
+        <Card>
+          <CardHeader><CardTitle>Bulk import — Meta export</CardTitle></CardHeader>
+          <CardContent className="space-y-3">
+            <input
+              type="file"
+              accept=".csv,.xlsx,.xls"
+              onChange={(e) => { const f = e.target.files?.[0]; if (f) { setImportMsg("Importing…"); importFile.mutate(f); } }}
+              className="block w-full text-sm text-muted-foreground file:mr-3 file:rounded-lg file:border-0 file:bg-primary file:px-3 file:py-1.5 file:text-sm file:font-medium file:text-primary-foreground"
+            />
+            {importMsg && <p className="text-xs text-muted-foreground">{importMsg}</p>}
+            <p className="text-xs text-muted-foreground">Export from Meta Ads Manager with a <b>Day</b> column (daily metrics) and/or <b>Campaign name</b>, then drop the CSV/Excel here — columns are auto-detected.</p>
+          </CardContent>
+        </Card>
+
         {/* Manual metric entry */}
         <Card>
           <CardHeader className="flex-row items-center justify-between"><CardTitle>Add daily metrics</CardTitle><Saved k="metric" /></CardHeader>
@@ -123,7 +161,7 @@ export default function ClientDetailPage() {
 
         {/* Task */}
         <Card>
-          <CardHeader className="flex-row items-center justify-between"><CardTitle>Create task</CardTitle><Saved k="task" /></CardHeader>
+          <CardHeader className="flex-row items-center justify-between"><CardTitle>Create task / plan item</CardTitle><Saved k="task" /></CardHeader>
           <CardContent className="space-y-3">
             <div className="space-y-1.5"><Label>Title</Label><Input value={task.title} onChange={(e) => setTask({ ...task, title: e.target.value })} /></div>
             <div className="grid grid-cols-2 gap-3">
@@ -132,9 +170,16 @@ export default function ClientDetailPage() {
                   <option>HIGH</option><option>MEDIUM</option><option>LOW</option>
                 </select>
               </div>
-              <div className="space-y-1.5"><Label>Responsible</Label><Input value={task.responsible} onChange={(e) => setTask({ ...task, responsible: e.target.value })} /></div>
+              <div className="space-y-1.5"><Label>Timeframe</Label>
+                <select value={task.timeframe} onChange={(e) => setTask({ ...task, timeframe: e.target.value })} className="h-11 w-full rounded-lg border border-input bg-background/60 px-3 text-sm">
+                  <option value="today">Today</option>
+                  <option value="week">This Week</option>
+                  <option value="month">This Month</option>
+                </select>
+              </div>
             </div>
-            <Button size="sm" onClick={() => addTask.mutate()} disabled={!task.title}>Add task</Button>
+            <div className="space-y-1.5"><Label>Responsible / detail</Label><Input value={task.responsible} onChange={(e) => setTask({ ...task, responsible: e.target.value })} placeholder="e.g. Creative team" /></div>
+            <Button size="sm" onClick={() => addTask.mutate()} disabled={!task.title}>Add to plan</Button>
           </CardContent>
         </Card>
       </div>

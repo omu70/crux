@@ -34,29 +34,52 @@ class BaseIntegration:
 
 
 class MetaAdsClient(BaseIntegration):
-    """Meta Marketing API — insights endpoint."""
+    """Meta Marketing API — account + campaign insights."""
     name = "meta_ads"
     BASE = "https://graph.facebook.com/v19.0"
 
     def __init__(self, ad_account_id: str | None = None, access_token: str | None = None):
-        self.ad_account_id = ad_account_id
+        # Accept both "act_123456" and "123456".
+        acct = (ad_account_id or "").strip()
+        self.ad_account_id = acct.replace("act_", "") if acct else None
         self.access_token = access_token or settings.META_ACCESS_TOKEN
 
     def is_configured(self) -> bool:
         return bool(self.ad_account_id and self.access_token)
 
+    def _get(self, path: str, params: dict[str, Any]) -> dict[str, Any]:
+        params = {**params, "access_token": self.access_token}
+        r = httpx.get(f"{self.BASE}/{path}", params=params, timeout=30)
+        r.raise_for_status()
+        return r.json()
+
     def fetch_summary(self) -> dict[str, Any]:
         if not self.is_configured():
             return {"configured": False, "provider": self.name}
         fields = "spend,reach,frequency,ctr,clicks,impressions,cpm,actions,purchase_roas"
-        url = f"{self.BASE}/act_{self.ad_account_id}/insights"
-        params = {"fields": fields, "date_preset": "last_30d", "access_token": self.access_token}
         try:
-            r = httpx.get(url, params=params, timeout=20)
-            r.raise_for_status()
-            return {"configured": True, "provider": self.name, "data": r.json().get("data", [])}
+            data = self._get(f"act_{self.ad_account_id}/insights",
+                             {"fields": fields, "date_preset": "last_30d"})
+            return {"configured": True, "provider": self.name, "data": data.get("data", [])}
         except Exception as exc:  # pragma: no cover - network
             return {"configured": True, "provider": self.name, "error": str(exc)}
+
+    def fetch_campaign_insights(self, date_preset: str = "last_30d") -> list[dict[str, Any]]:
+        """Per-campaign aggregated insights for the last N days."""
+        fields = ("campaign_id,campaign_name,spend,impressions,clicks,ctr,cpm,reach,"
+                  "frequency,actions,action_values,purchase_roas")
+        return self._get(
+            f"act_{self.ad_account_id}/insights",
+            {"level": "campaign", "fields": fields, "date_preset": date_preset, "limit": 200},
+        ).get("data", [])
+
+    def fetch_daily_insights(self, date_preset: str = "last_30d") -> list[dict[str, Any]]:
+        """Account-level insights broken down by day (time_increment=1)."""
+        fields = "spend,impressions,clicks,ctr,cpm,reach,actions,action_values,purchase_roas"
+        return self._get(
+            f"act_{self.ad_account_id}/insights",
+            {"fields": fields, "time_increment": 1, "date_preset": date_preset, "limit": 500},
+        ).get("data", [])
 
 
 class ShopifyClient(BaseIntegration):

@@ -8,7 +8,7 @@ from sqlalchemy.orm import Session
 
 from app.core.database import get_db
 from app.core.deps import get_current_client
-from app.models import AiInsight, Client, MetricSnapshot, Report
+from app.models import AiInsight, Client, MetricSnapshot, Report, Task
 from app.services.ai import generate_insights, generate_plan_of_action
 
 router = APIRouter(prefix="/api", tags=["insights"])
@@ -49,8 +49,22 @@ def generate(db: Session = Depends(get_db), client: Client = Depends(get_current
 
 @router.get("/insights/plan")
 def plan_of_action(db: Session = Depends(get_db), client: Client = Depends(get_current_client)):
-    metrics = _recent_metric_dicts(db, client.id)
-    return generate_plan_of_action(metrics)
+    """Return the agency-authored plan (Tasks grouped by timeframe). Falls back
+    to an auto-generated plan only when no tasks have been created yet."""
+    tasks = (db.query(Task).filter(Task.client_id == client.id)
+             .order_by(Task.created_at.desc()).all())
+    buckets: dict[str, list] = {"today": [], "week": [], "month": []}
+    for t in tasks:
+        tf = t.timeframe if t.timeframe in buckets else "week"
+        buckets[tf].append({
+            "title": t.title,
+            "priority": t.priority,
+            "expected_result": t.expected_result or t.description or "",
+            "status": t.status,
+        })
+    if any(buckets.values()):
+        return buckets
+    return generate_plan_of_action(_recent_metric_dicts(db, client.id))
 
 
 @router.get("/reports")

@@ -1,6 +1,6 @@
 "use client";
 
-import { Bell, Bot, CircleDollarSign, Target, TriangleAlert, User2 } from "lucide-react";
+import { Bell, Bot, CalendarRange, CircleDollarSign, Rocket, Target, TriangleAlert, User2 } from "lucide-react";
 import { useState } from "react";
 import { AreaTrend, BarSeries, MultiLine, RangeSelector } from "@/components/dashboard/charts";
 import { EmptyState, Loading, ScoreRing } from "@/components/dashboard/common";
@@ -8,7 +8,7 @@ import { InsightCard } from "@/components/dashboard/insight-card";
 import { KpiGrid } from "@/components/dashboard/kpi-card";
 import { Badge, Card, CardContent, CardHeader, CardTitle, Progress } from "@/components/ui";
 import {
-  useAlerts, useGoals, useInsights, usePerformanceScore, useSummary, useTimeseries,
+  useAlerts, useGoals, useInsights, usePerformanceScore, usePlan, useSummary, useTimeseries,
 } from "@/lib/hooks";
 import { formatCurrency } from "@/lib/utils";
 
@@ -20,11 +20,14 @@ export default function OverviewPage() {
   const score = usePerformanceScore();
   const alerts = useAlerts();
   const goals = useGoals();
+  const plan = usePlan();
 
   if (summary.isLoading) return <Loading />;
   const s = summary.data!;
   const c = s.client;
   const series = ts.data?.series ?? [];
+  const noData = series.length === 0 || s.kpis.every((k) => !k.value);
+  const monthPlan: any[] = Array.isArray(plan.data?.month) ? plan.data.month : [];
 
   return (
     <div className="space-y-6">
@@ -49,6 +52,39 @@ export default function OverviewPage() {
           <RangeSelector value={range} onChange={setRange} />
         </div>
       </Card>
+
+      {noData && (
+        <Card className="border-primary/30 bg-primary/5">
+          <CardContent className="flex items-center gap-3 p-4">
+            <Rocket className="h-5 w-5 shrink-0 text-primary" />
+            <p className="text-sm">
+              <span className="font-medium">Your campaigns are ramping up.</span>{" "}
+              <span className="text-muted-foreground">Live performance will appear here as data comes in — meanwhile, here&apos;s this month&apos;s plan and your insights.</span>
+            </p>
+          </CardContent>
+        </Card>
+      )}
+
+      {monthPlan.length > 0 && (
+        <Card>
+          <CardHeader className="flex-row items-center justify-between">
+            <CardTitle className="flex items-center gap-2"><CalendarRange className="h-4 w-4 text-primary" /> Plan for This Month</CardTitle>
+            <Badge tone="primary">{c.current_month}</Badge>
+          </CardHeader>
+          <CardContent className="grid gap-2 sm:grid-cols-2">
+            {monthPlan.map((t: any, i: number) => (
+              <div key={i} className="flex items-start gap-3 rounded-lg border border-border p-3">
+                <span className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-primary" />
+                <div className="min-w-0 flex-1">
+                  <div className="text-sm font-medium">{t.title}</div>
+                  {t.expected_result && <div className="text-xs text-muted-foreground">{t.expected_result}</div>}
+                </div>
+                <Badge tone={t.priority === "HIGH" ? "danger" : t.priority === "MEDIUM" ? "warning" : "default"} className="shrink-0">{t.priority}</Badge>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+      )}
 
       {/* KPI grid */}
       <KpiGrid cards={s.kpis} currency={c.currency} />
