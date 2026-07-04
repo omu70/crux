@@ -49,10 +49,12 @@ def ecommerce(db: Session = Depends(get_db), client: Client = Depends(get_curren
     for p in products:
         categories[p.category] = categories.get(p.category, 0) + p.revenue
     return {
-        "orders": len(orders),
+        "orders": len(paid),                 # paid orders = the real sales count
+        "total_orders": len(orders),         # every record incl. cancelled/refunded/pending
         "revenue": round(revenue, 2),
         "cancelled": sum(1 for o in orders if o.status == "CANCELLED"),
         "refunds": sum(1 for o in orders if o.status == "REFUNDED"),
+        "pending": sum(1 for o in orders if o.status == "PENDING"),
         "aov": round(revenue / len(paid), 2) if paid else 0,
         "top_products": [{"title": p.title, "revenue": p.revenue, "units_sold": p.units_sold} for p in top_products],
         "top_categories": sorted(
