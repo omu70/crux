@@ -2,13 +2,21 @@
 from __future__ import annotations
 
 import datetime as dt
+import uuid as _uuid
 from typing import Any, Optional
 
-from pydantic import BaseModel, EmailStr, Field, ConfigDict
+from pydantic import BaseModel, EmailStr, Field, ConfigDict, field_validator
 
 
 class ORMModel(BaseModel):
     model_config = ConfigDict(from_attributes=True)
+
+    @field_validator("*", mode="before")
+    @classmethod
+    def _uuid_to_str(cls, v):
+        # Postgres UUID columns come back as UUID objects; coerce to str so the
+        # string id fields validate/serialize cleanly.
+        return str(v) if isinstance(v, _uuid.UUID) else v
 
 
 # ── Auth ─────────────────────────────────────────────────────────────────────
