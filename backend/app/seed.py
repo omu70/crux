@@ -281,24 +281,29 @@ def run() -> None:
         admin = User(email=settings.SEED_ADMIN_EMAIL, username=settings.SEED_ADMIN_USERNAME,
                      password_hash=hash_password(settings.SEED_ADMIN_PASSWORD), role="ADMIN", is_active=True)
         db.add(admin)
+        db.commit()  # commit admin first so login always works, even if demo data fails
+        print(f"✓ Admin ready → username: {settings.SEED_ADMIN_USERNAME}  password: {settings.SEED_ADMIN_PASSWORD}")
 
-        m1 = AccountManager(name="Priya Sharma", email="[email protected]", title="Senior Account Manager")
-        m2 = AccountManager(name="Daniel Okoro", email="[email protected]", title="Growth Strategist")
-        db.add_all([m1, m2])
-        db.flush()
+        try:
+            m1 = AccountManager(name="Priya Sharma", email="[email protected]", title="Senior Account Manager")
+            m2 = AccountManager(name="Daniel Okoro", email="[email protected]", title="Growth Strategist")
+            db.add_all([m1, m2])
+            db.flush()
 
-        db.add(Announcement(title="Welcome to CRUX ✨", message="Your new client portal is live. Explore your dashboard!", created_by="admin"))
+            db.add(Announcement(title="Welcome to CRUX ✨", message="Your new client portal is live. Explore your dashboard!", created_by="admin"))
 
-        _seed_client(db, company="Lumina Skincare", contact="Jordan Lee", username="lumina", email="[email protected]",
-                     plan="Scale", budget=25000, manager=m1, base_rev=4200, base_spend=980)
-        _seed_client(db, company="NorthPeak Outdoors", contact="Sam Rivera", username="northpeak", email="[email protected]",
-                     plan="Growth", budget=14000, manager=m2, base_rev=2600, base_spend=620)
+            _seed_client(db, company="Lumina Skincare", contact="Jordan Lee", username="lumina", email="[email protected]",
+                         plan="Scale", budget=25000, manager=m1, base_rev=4200, base_spend=980)
+            _seed_client(db, company="NorthPeak Outdoors", contact="Sam Rivera", username="northpeak", email="[email protected]",
+                         plan="Growth", budget=14000, manager=m2, base_rev=2600, base_spend=620)
 
-        db.commit()
-        print("✓ Seed complete.")
-        print(f"  Admin  → username: {settings.SEED_ADMIN_USERNAME}  password: {settings.SEED_ADMIN_PASSWORD}")
-        print("  Client → username: lumina     password: Client@12345")
-        print("  Client → username: northpeak  password: Client@12345")
+            db.commit()
+            print("✓ Seed complete (admin + 2 demo clients).")
+            print("  Client → username: lumina     password: Client@12345")
+            print("  Client → username: northpeak  password: Client@12345")
+        except Exception as exc:
+            db.rollback()
+            print(f"⚠ Demo data skipped ({exc}). Admin account is ready to use.")
     finally:
         db.close()
 

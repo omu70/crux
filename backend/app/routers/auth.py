@@ -87,3 +87,22 @@ def forgot_password(payload: dict, db: Session = Depends(get_db)):
         send_email(user.email, "Reset your CRUX password",
                    "<p>A password reset was requested. Contact your DiziGroww account manager to complete the reset.</p>")
     return {"ok": True, "message": "If that account exists, reset instructions have been sent."}
+
+
+@router.post("/bootstrap")
+def bootstrap(db: Session = Depends(get_db)):
+    """One-time seeding for a fresh deploy. Runs the seed ONLY when the database
+    has no users; refuses (safely) once seeded. Reports the exact error if the
+    seed fails, so an empty-database deploy can be diagnosed + fixed."""
+    from app.core.database import init_db
+    init_db()  # ensure the schema exists (safe no-op if already created)
+    existing = db.query(User).count()
+    if existing > 0:
+        return {"seeded": False, "reason": "already_seeded", "users": existing}
+    try:
+        from app import seed
+        seed.run()
+    except Exception as exc:  # surface the real failure
+        import traceback
+        return {"seeded": False, "error": str(exc), "trace": traceback.format_exc()[-2000:]}
+    return {"seeded": True, "users": db.query(User).count()}
