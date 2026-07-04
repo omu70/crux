@@ -46,4 +46,8 @@ def init_db() -> None:
     """
     from app import models  # noqa: F401  (register models on Base.metadata)
 
-    Base.metadata.create_all(bind=engine)
+    try:
+        Base.metadata.create_all(bind=engine)
+    except Exception as exc:  # pragma: no cover - keeps the service booting
+        import logging
+        logging.getLogger("crux").error("Database init failed: %s", exc)

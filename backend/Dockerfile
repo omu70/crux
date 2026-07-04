@@ -16,4 +16,6 @@ COPY . .
 
 EXPOSE 8000
 
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+# start.sh seeds (idempotent) then runs uvicorn on $PORT. Using a script avoids
+# shell-quoting issues with platform "docker command" overrides (e.g. Render).
+CMD ["sh", "start.sh"]

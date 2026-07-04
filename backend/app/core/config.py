@@ -50,14 +50,24 @@ class Settings(BaseSettings):
     @property
     def sqlalchemy_url(self) -> str:
         """Resolve the DB URL, defaulting to a local SQLite file for dev/tests."""
-        if self.DATABASE_URL:
-            # Normalise Supabase/Heroku-style `postgres://` to the psycopg2 driver.
-            url = self.DATABASE_URL
-            if url.startswith("postgres://"):
-                url = url.replace("postgres://", "postgresql+psycopg2://", 1)
-            elif url.startswith("postgresql://"):
-                url = url.replace("postgresql://", "postgresql+psycopg2://", 1)
+        url = (self.DATABASE_URL or "").strip()
+        if not url:
+            return "sqlite:///./crux.db"
+        # Normalise Supabase/Heroku-style `postgres://` to the psycopg2 driver.
+        if url.startswith("postgres://"):
+            return url.replace("postgres://", "postgresql+psycopg2://", 1)
+        if url.startswith("postgresql://"):
+            return url.replace("postgresql://", "postgresql+psycopg2://", 1)
+        if url.startswith(("postgresql+psycopg2://", "sqlite")):
             return url
+        # Misconfiguration (e.g. the Supabase https:// project URL pasted by mistake).
+        # Don't crash the service — fall back to SQLite and log the exact fix.
+        import logging
+        logging.getLogger("crux").error(
+            "DATABASE_URL=%r is not a postgresql:// or sqlite URL. Falling back to "
+            "temporary SQLite. Use the Supabase 'Session pooler' connection string "
+            "(starts with postgresql://) for a persistent database.", url,
+        )
         return "sqlite:///./crux.db"
 
     @property
