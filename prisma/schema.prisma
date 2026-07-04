@@ -1,0 +1,626 @@
+// ============================================================================
+// CRUX by DiziGroww — Prisma schema (canonical database model)
+// "Where Growth Becomes Crystal Clear."
+//
+// This schema is the source of truth for the PostgreSQL database (Supabase in
+// production, local Docker Postgres in development). The FastAPI backend ships
+// SQLAlchemy models that mirror these tables 1:1 (see backend/app/models).
+//
+// Generate migrations with:  npx prisma migrate dev
+// Push to Supabase with:      DATABASE_URL=... npx prisma migrate deploy
+// ============================================================================
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ----------------------------------------------------------------------------
+// Enums
+// ----------------------------------------------------------------------------
+enum Role {
+  ADMIN
+  CLIENT
+}
+
+enum ClientStatus {
+  ACTIVE
+  SUSPENDED
+}
+
+enum IntegrationType {
+  META_ADS
+  SHOPIFY
+  WOOCOMMERCE
+  GA4
+  SEARCH_CONSOLE
+  CLARITY
+  WEBSITE
+}
+
+enum IntegrationStatus {
+  CONNECTED
+  DISCONNECTED
+  ERROR
+  PENDING
+}
+
+enum CampaignStatus {
+  ACTIVE
+  PAUSED
+  REJECTED
+  LEARNING
+}
+
+enum OrderStatus {
+  PAID
+  CANCELLED
+  REFUNDED
+  PENDING
+}
+
+enum TaskStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+}
+
+enum Priority {
+  LOW
+  MEDIUM
+  HIGH
+}
+
+enum GoalType {
+  REVENUE
+  ROAS
+  LEADS
+  SALES
+}
+
+enum DocumentCategory {
+  INVOICE
+  REPORT
+  CREATIVE
+  CONTRACT
+  OTHER
+}
+
+enum TicketStatus {
+  OPEN
+  IN_PROGRESS
+  RESOLVED
+  CLOSED
+}
+
+enum NotificationType {
+  CAMPAIGN_APPROVED
+  CAMPAIGN_REJECTED
+  CREATIVE_UPLOADED
+  BUDGET_INCREASED
+  MEETING_SCHEDULED
+  REPORT_READY
+  GENERAL
+}
+
+enum AlertType {
+  CPA_INCREASE
+  ROAS_DROP
+  REVENUE_DROP
+  WEBSITE_DOWN
+  PIXEL_DISCONNECTED
+  GA_DISCONNECTED
+  SHOPIFY_DISCONNECTED
+}
+
+enum AlertSeverity {
+  INFO
+  WARNING
+  CRITICAL
+}
+
+// ----------------------------------------------------------------------------
+// Identity & access
+// ----------------------------------------------------------------------------
+model User {
+  id           String    @id @default(uuid())
+  email        String    @unique
+  username     String    @unique
+  passwordHash String    @map("password_hash")
+  role         Role      @default(CLIENT)
+  isActive     Boolean   @default(true) @map("is_active")
+  lastLoginAt  DateTime? @map("last_login_at")
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+
+  client         Client?
+  auditLogs      AuditLog[]
+  ticketMessages TicketMessage[]
+  chatMessages   ChatMessage[]
+
+  @@map("users")
+}
+
+model AccountManager {
+  id        String   @id @default(uuid())
+  name      String
+  email     String   @unique
+  title     String   @default("Account Manager")
+  avatarUrl String?  @map("avatar_url")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  clients Client[]
+
+  @@map("account_managers")
+}
+
+model Client {
+  id                   String       @id @default(uuid())
+  userId               String       @unique @map("user_id")
+  companyName          String       @map("company_name")
+  contactName          String       @map("contact_name")
+  plan                 String       @default("Growth")
+  status               ClientStatus @default(ACTIVE)
+  currency             String       @default("USD")
+  timezone             String       @default("UTC")
+  logoUrl              String?      @map("logo_url")
+  monthlyBudget        Float        @default(0) @map("monthly_budget")
+  monthlyTargetRevenue Float        @default(0) @map("monthly_target_revenue")
+  monthlyTargetRoas    Float        @default(0) @map("monthly_target_roas")
+  monthlyTargetLeads   Int          @default(0) @map("monthly_target_leads")
+  accountManagerId     String?      @map("account_manager_id")
+  createdAt            DateTime     @default(now()) @map("created_at")
+  updatedAt            DateTime     @updatedAt @map("updated_at")
+
+  user           User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accountManager AccountManager?  @relation(fields: [accountManagerId], references: [id])
+  integrations   Integration[]
+  metrics        MetricSnapshot[]
+  campaigns      Campaign[]
+  orders         Order[]
+  products       Product[]
+  analytics      AnalyticsSnapshot[]
+  searchConsole  SearchConsoleSnapshot[]
+  seo            SeoSnapshot[]
+  reports        Report[]
+  tasks          Task[]
+  goals          Goal[]
+  meetingNotes   MeetingNote[]
+  notifications  Notification[]
+  documents      Document[]
+  tickets        Ticket[]
+  chatMessages   ChatMessage[]
+  alerts         Alert[]
+  scores         PerformanceScore[]
+  websiteHealth  WebsiteHealth[]
+  insights       AiInsight[]
+
+  @@map("clients")
+}
+
+// ----------------------------------------------------------------------------
+// Integrations
+// ----------------------------------------------------------------------------
+model Integration {
+  id           String            @id @default(uuid())
+  clientId     String            @map("client_id")
+  type         IntegrationType
+  status       IntegrationStatus @default(PENDING)
+  externalId   String?           @map("external_id")
+  accountName  String?           @map("account_name")
+  config       Json?
+  lastSyncedAt DateTime?         @map("last_synced_at")
+  createdAt    DateTime          @default(now()) @map("created_at")
+
+  client Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
+  @@unique([clientId, type])
+  @@map("integrations")
+}
+
+// ----------------------------------------------------------------------------
+// Metrics & performance data
+// ----------------------------------------------------------------------------
+model MetricSnapshot {
+  id                 String   @id @default(uuid())
+  clientId           String   @map("client_id")
+  date               DateTime @db.Date
+  revenue            Float    @default(0)
+  orders             Int      @default(0)
+  adSpend            Float    @default(0) @map("ad_spend")
+  roas               Float    @default(0)
+  ctr                Float    @default(0)
+  cpa                Float    @default(0)
+  cpm                Float    @default(0)
+  conversionRate     Float    @default(0) @map("conversion_rate")
+  aov                Float    @default(0)
+  revenueGrowth      Float    @default(0) @map("revenue_growth")
+  sessions           Int      @default(0)
+  returningCustomers Int      @default(0) @map("returning_customers")
+  newCustomers       Int      @default(0) @map("new_customers")
+  profitEstimate     Float    @default(0) @map("profit_estimate")
+  leadCount          Int      @default(0) @map("lead_count")
+  whatsappLeads      Int      @default(0) @map("whatsapp_leads")
+  phoneCalls         Int      @default(0) @map("phone_calls")
+  impressions        Int      @default(0)
+  clicks             Int      @default(0)
+  reach              Int      @default(0)
+
+  client Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
+  @@unique([clientId, date])
+  @@index([clientId, date])
+  @@map("metric_snapshots")
+}
+
+model Campaign {
+  id           String         @id @default(uuid())
+  clientId     String         @map("client_id")
+  externalId   String?        @map("external_id")
+  name         String
+  status       CampaignStatus @default(ACTIVE)
+  objective    String         @default("CONVERSIONS")
+  spend        Float          @default(0)
+  reach        Int            @default(0)
+  frequency    Float          @default(0)
+  ctr          Float          @default(0)
+  clicks       Int            @default(0)
+  impressions  Int            @default(0)
+  cpm          Float          @default(0)
+  cpa          Float          @default(0)
+  conversions  Int            @default(0)
+  purchaseRoas Float          @default(0) @map("purchase_roas")
+  revenue      Float          @default(0)
+  isWinning    Boolean        @default(false) @map("is_winning")
+  isLosing     Boolean        @default(false) @map("is_losing")
+  updatedAt    DateTime       @updatedAt @map("updated_at")
+
+  client Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
+  @@index([clientId])
+  @@map("campaigns")
+}
+
+model Order {
+  id           String      @id @default(uuid())
+  clientId     String      @map("client_id")
+  externalId   String?     @map("external_id")
+  orderNumber  String      @map("order_number")
+  customerName String      @map("customer_name")
+  total        Float       @default(0)
+  status       OrderStatus @default(PAID)
+  itemsCount   Int         @default(1) @map("items_count")
+  source       String      @default("shopify")
+  createdAt    DateTime    @default(now()) @map("created_at")
+
+  client Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
+  @@index([clientId, createdAt])
+  @@map("orders")
+}
+
+model Product {
+  id         String  @id @default(uuid())
+  clientId   String  @map("client_id")
+  externalId String? @map("external_id")
+  title      String
+  category   String  @default("General")
+  price      Float   @default(0)
+  unitsSold  Int     @default(0) @map("units_sold")
+  revenue    Float   @default(0)
+  inventory  Int     @default(0)
+  lowStock   Boolean @default(false) @map("low_stock")
+
+  client Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
+  @@index([clientId])
+  @@map("products")
+}
+
+model AnalyticsSnapshot {
+  id             String   @id @default(uuid())
+  clientId       String   @map("client_id")
+  date           DateTime @db.Date
+  visitors       Int      @default(0)
+  sessions       Int      @default(0)
+  bounceRate     Float    @default(0) @map("bounce_rate")
+  engagementTime Float    @default(0) @map("engagement_time")
+  organic        Int      @default(0)
+  paid           Int      @default(0)
+  direct         Int      @default(0)
+  referral       Int      @default(0)
+  topCountries   Json?    @map("top_countries")
+  topCities      Json?    @map("top_cities")
+  devices        Json?
+  browsers       Json?
+
+  client Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
+  @@unique([clientId, date])
+  @@map("analytics_snapshots")
+}
+
+model SearchConsoleSnapshot {
+  id          String   @id @default(uuid())
+  clientId    String   @map("client_id")
+  date        DateTime @db.Date
+  clicks      Int      @default(0)
+  impressions Int      @default(0)
+  avgPosition Float    @default(0) @map("avg_position")
+  ctr         Float    @default(0)
+  topKeywords Json?    @map("top_keywords")
+  topPages    Json?    @map("top_pages")
+
+  client Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
+  @@unique([clientId, date])
+  @@map("search_console_snapshots")
+}
+
+model SeoSnapshot {
+  id              String   @id @default(uuid())
+  clientId        String   @map("client_id")
+  date            DateTime @db.Date
+  keywordGrowth   Float    @default(0) @map("keyword_growth")
+  backlinks       Int      @default(0)
+  indexedPages    Int      @default(0) @map("indexed_pages")
+  technicalIssues Int      @default(0) @map("technical_issues")
+  suggestions     Json?
+
+  client Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
+  @@unique([clientId, date])
+  @@map("seo_snapshots")
+}
+
+// ----------------------------------------------------------------------------
+// Deliverables & collaboration
+// ----------------------------------------------------------------------------
+model Report {
+  id          String   @id @default(uuid())
+  clientId    String   @map("client_id")
+  title       String
+  month       String
+  summary     String   @db.Text
+  wins        Json?
+  losses      Json?
+  kpis        Json?
+  suggestions Json?
+  strategy    String?  @db.Text
+  fileUrl     String?  @map("file_url")
+  createdBy   String?  @map("created_by")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  client Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
+  @@index([clientId])
+  @@map("reports")
+}
+
+model Task {
+  id             String     @id @default(uuid())
+  clientId       String     @map("client_id")
+  title          String
+  description    String?    @db.Text
+  status         TaskStatus @default(PENDING)
+  priority       Priority   @default(MEDIUM)
+  dueDate        DateTime?  @map("due_date")
+  responsible    String?
+  expectedResult String?    @map("expected_result")
+  timeframe      String     @default("week") // today | week | month
+  createdAt      DateTime   @default(now()) @map("created_at")
+
+  client Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
+  @@index([clientId, status])
+  @@map("tasks")
+}
+
+model Goal {
+  id        String   @id @default(uuid())
+  clientId  String   @map("client_id")
+  type      GoalType
+  label     String
+  target    Float
+  current   Float    @default(0)
+  unit      String   @default("")
+  period    String   @default("month")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  client Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
+  @@index([clientId])
+  @@map("goals")
+}
+
+model MeetingNote {
+  id           String   @id @default(uuid())
+  clientId     String   @map("client_id")
+  title        String
+  notes        String   @db.Text
+  actionItems  Json?    @map("action_items")
+  recordingUrl String?  @map("recording_url")
+  meetingDate  DateTime @map("meeting_date")
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  client Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
+  @@index([clientId])
+  @@map("meeting_notes")
+}
+
+model Notification {
+  id        String           @id @default(uuid())
+  clientId  String           @map("client_id")
+  type      NotificationType @default(GENERAL)
+  title     String
+  message   String           @db.Text
+  read      Boolean          @default(false)
+  createdAt DateTime         @default(now()) @map("created_at")
+
+  client Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
+  @@index([clientId, read])
+  @@map("notifications")
+}
+
+model Announcement {
+  id        String   @id @default(uuid())
+  title     String
+  message   String   @db.Text
+  createdBy String?  @map("created_by")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("announcements")
+}
+
+model Document {
+  id         String           @id @default(uuid())
+  clientId   String           @map("client_id")
+  name       String
+  category   DocumentCategory @default(OTHER)
+  fileType   String           @map("file_type")
+  fileUrl    String           @map("file_url")
+  sizeBytes  Int              @default(0) @map("size_bytes")
+  uploadedBy String?          @map("uploaded_by")
+  createdAt  DateTime         @default(now()) @map("created_at")
+
+  client Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
+  @@index([clientId, category])
+  @@map("documents")
+}
+
+model Ticket {
+  id          String       @id @default(uuid())
+  clientId    String       @map("client_id")
+  subject     String
+  description String       @db.Text
+  priority    Priority     @default(MEDIUM)
+  status      TicketStatus @default(OPEN)
+  createdAt   DateTime     @default(now()) @map("created_at")
+  updatedAt   DateTime     @updatedAt @map("updated_at")
+
+  client   Client          @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  messages TicketMessage[]
+
+  @@index([clientId, status])
+  @@map("tickets")
+}
+
+model TicketMessage {
+  id        String   @id @default(uuid())
+  ticketId  String   @map("ticket_id")
+  senderId  String   @map("sender_id")
+  body      String   @db.Text
+  createdAt DateTime @default(now()) @map("created_at")
+
+  ticket Ticket @relation(fields: [ticketId], references: [id], onDelete: Cascade)
+  sender User   @relation(fields: [senderId], references: [id])
+
+  @@index([ticketId])
+  @@map("ticket_messages")
+}
+
+model ChatMessage {
+  id         String   @id @default(uuid())
+  clientId   String   @map("client_id")
+  senderId   String   @map("sender_id")
+  senderRole Role     @map("sender_role")
+  body       String   @db.Text
+  readAt     DateTime? @map("read_at")
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  client Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  sender User   @relation(fields: [senderId], references: [id])
+
+  @@index([clientId, createdAt])
+  @@map("chat_messages")
+}
+
+model Alert {
+  id        String        @id @default(uuid())
+  clientId  String        @map("client_id")
+  type      AlertType
+  severity  AlertSeverity @default(WARNING)
+  title     String
+  message   String        @db.Text
+  resolved  Boolean       @default(false)
+  createdAt DateTime      @default(now()) @map("created_at")
+
+  client Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
+  @@index([clientId, resolved])
+  @@map("alerts")
+}
+
+model AiInsight {
+  id        String   @id @default(uuid())
+  clientId  String   @map("client_id")
+  title     String
+  body      String   @db.Text
+  category  String   @default("performance") // performance | warning | opportunity | recommendation
+  impact    Priority @default(MEDIUM)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  client Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
+  @@index([clientId])
+  @@map("ai_insights")
+}
+
+model PerformanceScore {
+  id              String   @id @default(uuid())
+  clientId        String   @map("client_id")
+  date            DateTime @db.Date
+  overall         Int      @default(0)
+  adsScore        Int      @default(0) @map("ads_score")
+  seoScore        Int      @default(0) @map("seo_score")
+  websiteScore    Int      @default(0) @map("website_score")
+  revenueScore    Int      @default(0) @map("revenue_score")
+  speedScore      Int      @default(0) @map("speed_score")
+  conversionScore Int      @default(0) @map("conversion_score")
+
+  client Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
+  @@unique([clientId, date])
+  @@map("performance_scores")
+}
+
+model WebsiteHealth {
+  id             String   @id @default(uuid())
+  clientId       String   @map("client_id")
+  date           DateTime @db.Date
+  performance    Int      @default(0)
+  accessibility  Int      @default(0)
+  seo            Int      @default(0)
+  bestPractices  Int      @default(0) @map("best_practices")
+  lcp            Float    @default(0)
+  fid            Float    @default(0)
+  cls            Float    @default(0)
+
+  client Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
+
+  @@unique([clientId, date])
+  @@map("website_health")
+}
+
+model AuditLog {
+  id        String   @id @default(uuid())
+  userId    String?  @map("user_id")
+  action    String
+  entity    String?
+  entityId  String?  @map("entity_id")
+  ip        String?
+  meta      Json?
+  createdAt DateTime @default(now()) @map("created_at")
+
+  user User? @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@map("audit_logs")
+}

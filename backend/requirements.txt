@@ -1,0 +1,29 @@
+# ── CRUX backend — Python dependencies ──────────────────────────────────────
+# Core web framework
+fastapi==0.115.6
+uvicorn[standard]==0.34.0
+
+# Data / ORM
+SQLAlchemy==2.0.36
+psycopg2-binary==2.9.10        # PostgreSQL driver (Supabase / Docker Postgres)
+
+# Validation / settings
+pydantic==2.10.4
+pydantic-settings==2.7.0
+email-validator==2.2.0
+
+# Auth & security
+PyJWT==2.10.1
+bcrypt==4.2.1
+python-multipart==0.0.20       # form parsing + file uploads
+
+# HTTP client (integration API calls + tests)
+httpx==0.28.1
+
+# ── Optional integrations (imported lazily; install only if you use them) ────
+# google-generativeai==0.8.3   # Gemini AI insights
+# resend==2.5.1                # Transactional email
+# supabase==2.10.0             # Supabase Storage / admin client
+
+# ── Testing ──────────────────────────────────────────────────────────────────
+pytest==8.3.4

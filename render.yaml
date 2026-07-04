@@ -1,0 +1,25 @@
+# Render Blueprint — deploy the CRUX backend in one click.
+# Render ▸ New ▸ Blueprint ▸ point at this repo. Set the `sync:false` vars in the UI.
+services:
+  - type: web
+    name: crux-backend
+    runtime: docker
+    rootDir: backend
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /api/health
+    plan: starter
+    envVars:
+      - key: DATABASE_URL          # Supabase URI (postgresql+psycopg2://...)
+        sync: false
+      - key: JWT_SECRET            # auto-generated strong secret
+        generateValue: true
+      - key: CORS_ORIGINS          # e.g. https://crux.vercel.app
+        sync: false
+      - key: SUPABASE_URL
+        value: https://kiupgoucjytmuxygblps.supabase.co
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+      - key: GEMINI_API_KEY
+        sync: false
+      - key: RESEND_API_KEY
+        sync: false

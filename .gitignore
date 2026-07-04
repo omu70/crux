@@ -1,0 +1,40 @@
+# Dependencies
+node_modules/
+.pnp
+.venv/
+__pycache__/
+*.py[cod]
+
+# Env
+.env
+.env.local
+.env*.local
+!.env.example
+
+# Build output
+.next/
+out/
+dist/
+build/
+
+# Databases / local artifacts
+*.db
+*.db-journal
+*.sqlite
+crux.db
+test_crux.db
+backend/uploads/*
+!backend/uploads/.gitkeep
+
+# Testing / caches
+.pytest_cache/
+.mypy_cache/
+coverage/
+.DS_Store
+
+# Editor
+.vscode/
+.idea/
+
+# Prisma
+prisma/dev.db
