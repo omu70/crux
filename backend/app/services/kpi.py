@@ -47,12 +47,18 @@ def resolve_range(
         end, start = today, today - dt.timedelta(days=6)
     elif range_key == "30d":
         end, start = today, today - dt.timedelta(days=29)
+    elif range_key in ("90d", "quarter"):
+        end, start = today, today - dt.timedelta(days=89)
+    elif range_key in ("6m", "180d"):
+        end, start = today, today - dt.timedelta(days=179)
+    elif range_key in ("1y", "12m", "365d"):
+        end, start = today, today - dt.timedelta(days=364)
+    elif range_key in ("all", "max"):
+        end, start = today, today - dt.timedelta(days=3650)
     elif range_key == "last_month":
         first_this = today.replace(day=1)
         end = first_this - dt.timedelta(days=1)
         start = end.replace(day=1)
-    elif range_key == "quarter":
-        end, start = today, today - dt.timedelta(days=89)
     elif range_key == "custom" and custom_from and custom_to:
         start, end = custom_from, custom_to
     else:  # default 30d
@@ -65,13 +71,36 @@ def resolve_range(
 
 
 def aggregate(rows: list[Any]) -> dict[str, float]:
-    """Aggregate metric rows into a single dict per KPI_DEFS rules."""
-    out: dict[str, float] = {}
+    """Aggregate metric rows into a single dict.
+
+    Additive metrics (revenue, orders, spend, clicks…) are summed. Ratio metrics
+    (ROAS, AOV, CTR, CPA, CPM, conversion rate) are recomputed from the period
+    TOTALS — averaging per-day ratios (including zero-days) badly understates them
+    (e.g. true AOV = total revenue / total orders, not the mean of daily AOVs).
+    """
+    def s(key: str) -> float:
+        return sum(float(getattr(r, key, 0) or 0) for r in rows)
+
+    # Additive base + display metrics
+    additive = ("revenue", "orders", "ad_spend", "impressions", "clicks", "reach",
+                "sessions", "returning_customers", "new_customers", "profit_estimate",
+                "lead_count", "whatsapp_leads", "phone_calls")
+    out: dict[str, float] = {k: round(s(k), 2) for k in additive}
+
+    rev, spend, orders = out["revenue"], out["ad_spend"], out["orders"]
+    impr, clicks = out["impressions"], out["clicks"]
+
+    # Ratio metrics derived from the totals above
+    out["roas"] = round(rev / spend, 2) if spend else 0.0
+    out["aov"] = round(rev / orders, 2) if orders else 0.0
+    out["ctr"] = round(clicks / impr * 100, 2) if impr else 0.0
+    out["cpa"] = round(spend / orders, 2) if orders else 0.0
+    out["cpm"] = round(spend / impr * 1000, 2) if impr else 0.0
+    out["conversion_rate"] = round(orders / clicks * 100, 2) if clicks else 0.0
+
+    # revenue_growth has no natural total — keep the period mean of daily values
     n = len(rows) or 1
-    for key, _label, _fmt, agg in KPI_DEFS:
-        vals = [float(getattr(r, key, 0) or 0) for r in rows]
-        total = sum(vals)
-        out[key] = round(total / n, 2) if agg == "avg" else round(total, 2)
+    out["revenue_growth"] = round(s("revenue_growth") / n, 2)
     return out
 
 
