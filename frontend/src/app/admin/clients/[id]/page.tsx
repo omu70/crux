@@ -33,6 +33,8 @@ export default function ClientDetailPage() {
   const [metaAccount, setMetaAccount] = useState("");
   const [syncMsg, setSyncMsg] = useState("");
   const [importMsg, setImportMsg] = useState("");
+  const [woo, setWoo] = useState({ url: "", key: "", secret: "" });
+  const [wooMsg, setWooMsg] = useState("");
 
   useEffect(() => {
     if (client.data) {
@@ -51,6 +53,8 @@ export default function ClientDetailPage() {
   const connectMeta = useMutation({ mutationFn: () => apiPost(`/admin/clients/${id}/integrations/meta/connect`, { ad_account_id: metaAccount }), onSuccess: () => { flash("meta"); qc.invalidateQueries({ queryKey: ["admin-integrations", id] }); } });
   const syncMeta = useMutation({ mutationFn: () => apiPost(`/admin/clients/${id}/integrations/meta/sync`), onSuccess: (r: any) => setSyncMsg(`Synced ${r.campaigns_synced} campaigns · ${r.days_synced} days ✓`), onError: (e: any) => setSyncMsg(e.message) });
   const importFile = useMutation({ mutationFn: (file: File) => { const fd = new FormData(); fd.append("file", file); return apiPost(`/admin/clients/${id}/metrics/import`, fd); }, onSuccess: (r: any) => setImportMsg(`Imported ${r.days_imported} days · ${r.campaigns_imported} campaigns ✓`), onError: (e: any) => setImportMsg(e.message) });
+  const connectWoo = useMutation({ mutationFn: () => apiPost(`/admin/clients/${id}/integrations/woocommerce/connect`, woo), onSuccess: () => { flash("woo"); qc.invalidateQueries({ queryKey: ["admin-integrations", id] }); } });
+  const syncWoo = useMutation({ mutationFn: () => apiPost(`/admin/clients/${id}/integrations/woocommerce/sync`), onSuccess: (r: any) => setWooMsg(`Synced ${r.orders_synced} orders · ${r.days_updated} days ✓`), onError: (e: any) => setWooMsg(e.message) });
 
   if (client.isLoading) return <Loading />;
   const c = client.data;
@@ -134,6 +138,24 @@ export default function ClientDetailPage() {
             />
             {importMsg && <p className="text-xs text-muted-foreground">{importMsg}</p>}
             <p className="text-xs text-muted-foreground">Export from Meta Ads Manager with a <b>Day</b> column (daily metrics) and/or <b>Campaign name</b>, then drop the CSV/Excel here — columns are auto-detected.</p>
+          </CardContent>
+        </Card>
+
+        {/* WooCommerce — orders */}
+        <Card>
+          <CardHeader className="flex-row items-center justify-between"><CardTitle>WooCommerce — Orders</CardTitle><Saved k="woo" /></CardHeader>
+          <CardContent className="space-y-3">
+            <div className="space-y-1.5"><Label>Store URL</Label><Input value={woo.url} onChange={(e) => setWoo({ ...woo, url: e.target.value })} placeholder="https://store.com" /></div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-1.5"><Label>Consumer key</Label><Input value={woo.key} onChange={(e) => setWoo({ ...woo, key: e.target.value })} placeholder="ck_…" /></div>
+              <div className="space-y-1.5"><Label>Consumer secret</Label><Input type="password" value={woo.secret} onChange={(e) => setWoo({ ...woo, secret: e.target.value })} placeholder="cs_…" /></div>
+            </div>
+            <div className="flex gap-2">
+              <Button size="sm" variant="outline" onClick={() => connectWoo.mutate()} disabled={!woo.url || !woo.key || !woo.secret || connectWoo.isPending}>Connect</Button>
+              <Button size="sm" onClick={() => { setWooMsg("Syncing…"); syncWoo.mutate(); }} disabled={syncWoo.isPending}>Sync orders</Button>
+            </div>
+            {wooMsg && <p className="text-xs text-muted-foreground">{wooMsg}</p>}
+            <p className="text-xs text-muted-foreground">In WooCommerce → Settings → Advanced → REST API → Add key (Read permission). Paste the store URL + key/secret, Connect, then Sync to pull orders into the E-commerce tab.</p>
           </CardContent>
         </Card>
 

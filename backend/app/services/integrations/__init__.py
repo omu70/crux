@@ -112,27 +112,44 @@ class WooCommerceClient(BaseIntegration):
     """WooCommerce REST API v3 — orders."""
     name = "woocommerce"
 
-    def __init__(self):
-        self.url = settings.WOOCOMMERCE_URL
-        self.key = settings.WOOCOMMERCE_KEY
-        self.secret = settings.WOOCOMMERCE_SECRET
+    def __init__(self, url: str | None = None, key: str | None = None, secret: str | None = None):
+        self.url = (url or settings.WOOCOMMERCE_URL or "").rstrip("/")
+        self.key = key or settings.WOOCOMMERCE_KEY
+        self.secret = secret or settings.WOOCOMMERCE_SECRET
 
     def is_configured(self) -> bool:
         return bool(self.url and self.key and self.secret)
+
+    def fetch_orders(self, pages: int = 3, per_page: int = 100) -> list[dict[str, Any]]:
+        """Fetch recent orders (paginated, newest first).
+
+        Tries HTTP Basic auth; if the server strips the Authorization header
+        (a common WooCommerce/hosting quirk → 401/403), retries with
+        query-string auth (consumer_key / consumer_secret).
+        """
+        url = f"{self.url}/wp-json/wc/v3/orders"
+        orders: list[dict[str, Any]] = []
+        for page in range(1, pages + 1):
+            params = {"per_page": per_page, "page": page, "orderby": "date", "order": "desc"}
+            r = httpx.get(url, params=params, auth=(self.key, self.secret), timeout=30)
+            if r.status_code in (401, 403):
+                r = httpx.get(url, params={**params, "consumer_key": self.key,
+                                           "consumer_secret": self.secret}, timeout=30)
+            r.raise_for_status()
+            batch = r.json()
+            if not batch:
+                break
+            orders.extend(batch)
+            if len(batch) < per_page:
+                break
+        return orders
 
     def fetch_summary(self) -> dict[str, Any]:
         if not self.is_configured():
             return {"configured": False, "provider": self.name}
         try:
-            r = httpx.get(
-                f"{self.url.rstrip('/')}/wp-json/wc/v3/orders",
-                params={"per_page": 50},
-                auth=(self.key, self.secret),
-                timeout=20,
-            )
-            r.raise_for_status()
-            orders = r.json()
-            revenue = sum(float(o.get("total", 0)) for o in orders)
+            orders = self.fetch_orders(pages=1, per_page=50)
+            revenue = sum(float(o.get("total", 0) or 0) for o in orders)
             return {"configured": True, "provider": self.name, "orders": len(orders), "revenue": revenue}
         except Exception as exc:  # pragma: no cover - network
             return {"configured": True, "provider": self.name, "error": str(exc)}

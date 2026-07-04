@@ -17,6 +17,7 @@ from app.schemas import (
 )
 from app.services.meta_import import import_meta_export, parse_table
 from app.services.meta_sync import sync_meta
+from app.services.woo_sync import sync_woo
 
 router = APIRouter(prefix="/api/admin/clients", tags=["admin:clients"])
 
@@ -256,4 +257,46 @@ def meta_sync(client_id: str, db: Session = Depends(get_db), admin: User = Depen
     except Exception as exc:  # network / Meta API errors
         raise HTTPException(502, f"Meta API error: {exc}")
     log_action(db, user_id=admin.id, action="sync_meta", entity="client", entity_id=client_id)
+    return {"ok": True, **result}
+
+
+# ── WooCommerce: connect + sync orders ───────────────────────────────────────
+@router.post("/{client_id}/integrations/woocommerce/connect", response_model=IntegrationOut)
+def connect_woo(client_id: str, body: dict,
+                db: Session = Depends(get_db), admin: User = Depends(require_admin)):
+    """Store the client's WooCommerce store URL + REST API key/secret.
+
+    Body: {"url": "https://store.com", "key": "ck_...", "secret": "cs_..."}.
+    """
+    _get_client(db, client_id)
+    url = (body.get("url") or "").strip().rstrip("/")
+    key = (body.get("key") or "").strip()
+    secret = (body.get("secret") or "").strip()
+    if not (url and key and secret):
+        raise HTTPException(422, "url, key and secret are all required")
+    integ = db.query(Integration).filter(
+        Integration.client_id == client_id, Integration.type == "WOOCOMMERCE").first()
+    if integ is None:
+        integ = Integration(client_id=client_id, type="WOOCOMMERCE")
+        db.add(integ)
+    integ.config = {"url": url, "key": key, "secret": secret}
+    integ.account_name = url
+    integ.status = "CONNECTED"
+    log_action(db, user_id=admin.id, action="connect_woocommerce", entity="integration", entity_id=client_id, commit=False)
+    db.commit()
+    db.refresh(integ)
+    return integ
+
+
+@router.post("/{client_id}/integrations/woocommerce/sync")
+def woo_sync(client_id: str, db: Session = Depends(get_db), admin: User = Depends(require_admin)):
+    """Pull recent WooCommerce orders into the client's e-commerce tab + KPIs."""
+    client = _get_client(db, client_id)
+    try:
+        result = sync_woo(db, client)
+    except ValueError as exc:
+        raise HTTPException(400, str(exc))
+    except Exception as exc:
+        raise HTTPException(502, f"WooCommerce API error: {exc}")
+    log_action(db, user_id=admin.id, action="sync_woocommerce", entity="client", entity_id=client_id)
     return {"ok": True, **result}
