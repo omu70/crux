@@ -68,6 +68,29 @@ def ecommerce(db: Session = Depends(get_db), client: Client = Depends(get_curren
     }
 
 
+@router.get("/orders")
+def orders(
+    status: str | None = None,
+    limit: int = 500,
+    db: Session = Depends(get_db),
+    client: Client = Depends(get_current_client),
+):
+    """Full order list, optionally filtered by status (PAID/CANCELLED/REFUNDED/PENDING)."""
+    q = db.query(Order).filter(Order.client_id == client.id)
+    if status:
+        q = q.filter(Order.status == status.upper())
+    rows = q.order_by(Order.created_at.desc()).limit(limit).all()
+    return {
+        "count": len(rows),
+        "total_value": round(sum(o.total for o in rows), 2),
+        "orders": [{
+            "id": o.id, "order_number": o.order_number, "customer_name": o.customer_name,
+            "total": o.total, "status": o.status, "items_count": o.items_count,
+            "source": o.source, "created_at": o.created_at.isoformat(),
+        } for o in rows],
+    }
+
+
 @router.get("/analytics")
 def analytics(db: Session = Depends(get_db), client: Client = Depends(get_current_client)):
     row = (db.query(AnalyticsSnapshot)
