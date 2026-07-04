@@ -27,7 +27,7 @@ def verify_password(password: str, password_hash: str) -> bool:
 def _create_token(subject: str, role: str, token_type: str, expires: dt.timedelta) -> str:
     now = dt.datetime.now(dt.timezone.utc)
     payload: dict[str, Any] = {
-        "sub": subject,
+        "sub": str(subject),   # ids may arrive as UUID objects — JWT needs a str
         "role": role,
         "type": token_type,
         "iat": int(now.timestamp()),
