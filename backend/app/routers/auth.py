@@ -29,21 +29,31 @@ def _authenticate(db: Session, username: str, password: str) -> User:
     return user
 
 
-def _issue(user: User) -> TokenPair:
+def _issue(user_id: str, role: str) -> TokenPair:
     return TokenPair(
-        access_token=create_access_token(user.id, user.role),
-        refresh_token=create_refresh_token(user.id, user.role),
+        access_token=create_access_token(user_id, role),
+        refresh_token=create_refresh_token(user_id, role),
     )
+
+
+def _record_login(db: Session, user: User, request: Request, action: str) -> None:
+    """Best-effort last-login + audit write. Never lets a write failure break the
+    actual login — the tokens are already safe to issue from the read above."""
+    try:
+        user.last_login_at = dt.datetime.now(dt.timezone.utc)
+        ip = request.client.host if request.client else None
+        log_action(db, user_id=user.id, action=action, entity="user", entity_id=user.id, ip=ip, commit=False)
+        db.commit()
+    except Exception:
+        db.rollback()
 
 
 @router.post("/login", response_model=TokenPair)
 def login(body: LoginRequest, request: Request, db: Session = Depends(get_db)):
     user = _authenticate(db, body.username, body.password)
-    user.last_login_at = dt.datetime.now(dt.timezone.utc)
-    ip = request.client.host if request.client else None
-    log_action(db, user_id=user.id, action="login", entity="user", entity_id=user.id, ip=ip, commit=False)
-    db.commit()
-    return _issue(user)
+    uid, role = user.id, user.role
+    _record_login(db, user, request, "login")
+    return _issue(uid, role)
 
 
 @router.post("/admin/login", response_model=TokenPair)
@@ -51,11 +61,9 @@ def admin_login(body: LoginRequest, request: Request, db: Session = Depends(get_
     user = _authenticate(db, body.username, body.password)
     if user.role != "ADMIN":
         raise HTTPException(status.HTTP_403_FORBIDDEN, "Not an admin account")
-    user.last_login_at = dt.datetime.now(dt.timezone.utc)
-    ip = request.client.host if request.client else None
-    log_action(db, user_id=user.id, action="admin_login", entity="user", entity_id=user.id, ip=ip, commit=False)
-    db.commit()
-    return _issue(user)
+    uid, role = user.id, user.role
+    _record_login(db, user, request, "admin_login")
+    return _issue(uid, role)
 
 
 @router.post("/refresh", response_model=TokenPair)
@@ -69,7 +77,7 @@ def refresh(body: RefreshRequest, db: Session = Depends(get_db)):
     user = db.get(User, payload.get("sub"))
     if user is None or not user.is_active:
         raise HTTPException(status.HTTP_401_UNAUTHORIZED, "User not found")
-    return _issue(user)
+    return _issue(user.id, user.role)
 
 
 @router.get("/me", response_model=UserOut)

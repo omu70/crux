@@ -24,8 +24,8 @@ class Settings(BaseSettings):
     RATE_LIMIT_PER_MINUTE: int = 120
 
     # Seed admin
-    SEED_ADMIN_USERNAME: str = "admin"
-    SEED_ADMIN_PASSWORD: str = "Admin@12345"
+    SEED_ADMIN_USERNAME: str = "Dizigroww"
+    SEED_ADMIN_PASSWORD: str = "Dizigroww@2026"
     SEED_ADMIN_EMAIL: str = "admin@dizigroww.com"
 
     # Supabase
