@@ -70,7 +70,7 @@ def _seed_client(db: Session, *, company: str, contact: str, username: str, emai
         user_id=user.id, company_name=company, contact_name=contact, plan=plan,
         monthly_budget=budget, monthly_target_revenue=base_rev * 34,
         monthly_target_roas=4.5, monthly_target_leads=520,
-        account_manager_id=manager.id, currency="USD",
+        account_manager_id=manager.id, currency="INR",
     )
     db.add(client)
     db.flush()

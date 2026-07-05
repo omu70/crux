@@ -63,7 +63,7 @@ class Client(Base):
     contact_name = mapped_column(String(200), nullable=False)
     plan = mapped_column(String(60), default="Growth", nullable=False)
     status = mapped_column(String(16), default="ACTIVE", nullable=False)
-    currency = mapped_column(String(8), default="USD", nullable=False)
+    currency = mapped_column(String(8), default="INR", nullable=False)
     timezone = mapped_column(String(60), default="UTC", nullable=False)
     logo_url = mapped_column(String(500), nullable=True)
     monthly_budget = mapped_column(Float, default=0, nullable=False)

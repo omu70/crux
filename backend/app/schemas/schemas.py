@@ -67,7 +67,7 @@ class ClientCreate(BaseModel):
     monthly_target_roas: float = 0
     monthly_target_leads: int = 0
     account_manager_id: Optional[str] = None
-    currency: str = "USD"
+    currency: str = "INR"
     timezone: str = "UTC"
 
 
