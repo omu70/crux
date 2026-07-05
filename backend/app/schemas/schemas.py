@@ -233,3 +233,8 @@ class MeetingNoteCreate(BaseModel):
 class GenericOK(BaseModel):
     ok: bool = True
     id: Optional[str] = None
+
+    @field_validator("id", mode="before")
+    @classmethod
+    def _uuid_to_str(cls, v):
+        return str(v) if isinstance(v, _uuid.UUID) else v

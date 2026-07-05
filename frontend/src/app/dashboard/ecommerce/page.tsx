@@ -74,6 +74,7 @@ export default function EcommercePage() {
                 <thead>
                   <tr className="border-b border-border text-left text-xs text-muted-foreground">
                     <th className="pb-2 pr-4 font-medium">Order</th>
+                    <th className="pb-2 pr-4 font-medium">Date</th>
                     <th className="pb-2 pr-4 font-medium">Customer</th>
                     <th className="pb-2 pr-4 text-right font-medium">Total</th>
                     <th className="pb-2 text-right font-medium">Status</th>
@@ -83,6 +84,7 @@ export default function EcommercePage() {
                   {(d.recent_orders ?? []).map((o: any) => (
                     <tr key={o.order_number} className="border-b border-border/60 last:border-0">
                       <td className="py-2.5 pr-4 font-medium">{o.order_number}</td>
+                      <td className="py-2.5 pr-4 text-muted-foreground">{o.created_at ? new Date(o.created_at).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" }) : "—"}</td>
                       <td className="py-2.5 pr-4">{o.customer_name}</td>
                       <td className="py-2.5 pr-4 text-right">{formatCurrency(o.total)}</td>
                       <td className="py-2.5 text-right"><Badge tone={orderTone[o.status]}>{o.status}</Badge></td>
