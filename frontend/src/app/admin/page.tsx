@@ -21,7 +21,7 @@ export default function AdminOverviewPage() {
         <StatTile label="Total Clients" value={o.clients.total} icon={Users} />
         <StatTile label="Active" value={o.clients.active} />
         <StatTile label="Suspended" value={o.clients.suspended} />
-        <StatTile label="Tracked Revenue" value={formatCurrency(o.tracked_revenue, "USD", true)} />
+        <StatTile label="Tracked Revenue" value={formatCurrency(o.tracked_revenue, "INR", true)} />
       </div>
 
       <div className="grid gap-4 lg:grid-cols-2">

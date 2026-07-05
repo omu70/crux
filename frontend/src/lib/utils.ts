@@ -13,8 +13,8 @@ export function formatCompact(n: number) {
   return new Intl.NumberFormat("en-US", { notation: "compact", maximumFractionDigits: 1 }).format(n ?? 0);
 }
 
-export function formatCurrency(n: number, currency = "USD", compact = false) {
-  return new Intl.NumberFormat("en-US", {
+export function formatCurrency(n: number, currency = "INR", compact = false) {
+  return new Intl.NumberFormat("en-IN", {
     style: "currency",
     currency,
     maximumFractionDigits: compact ? 1 : 0,
@@ -23,7 +23,7 @@ export function formatCurrency(n: number, currency = "USD", compact = false) {
 }
 
 /** Format a KPI card value according to its `format` field. */
-export function formatKpi(value: number, format: string, currency = "USD") {
+export function formatKpi(value: number, format: string, currency = "INR") {
   switch (format) {
     case "currency":
       return formatCurrency(value, currency, Math.abs(value) >= 100000);
