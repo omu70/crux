@@ -47,6 +47,52 @@ class Settings(BaseSettings):
     GA4_PROPERTY_ID: str = ""
     SEARCH_CONSOLE_SITE_URL: str = ""
 
+    # ── Aether AI ─────────────────────────────────────────────────────────────
+    # LLM providers (any subset; the router falls back across them, then to
+    # deterministic mock mode so every feature works without keys).
+    OPENAI_API_KEY: str = ""
+    ANTHROPIC_API_KEY: str = ""
+    # GEMINI_API_KEY reused from above.
+    LLM_DEFAULT_MODEL: str = "gpt-4o"
+    LLM_FAST_MODEL: str = "gpt-4o-mini"
+    ANTHROPIC_MODEL: str = "claude-sonnet-4-5"
+    GEMINI_MODEL: str = "gemini-2.0-flash"
+    EMBEDDING_MODEL: str = "text-embedding-3-large"
+    EMBEDDING_DIM: int = 1024  # requested dims for text-embedding-3-large
+    LLM_TIMEOUT_SECONDS: int = 90
+    LLM_MAX_RETRIES: int = 2
+    AETHER_FORCE_MOCK: bool = False  # force mock AI even if keys exist (tests)
+
+    # Meta Marketing API (publishing)
+    META_AD_ACCOUNT_ID: str = ""     # act_XXXX
+    META_PAGE_ID: str = ""
+    META_PIXEL_ID: str = ""
+    META_API_VERSION: str = "v21.0"
+
+    # Celery / Redis (empty broker → tasks run eagerly in-process)
+    REDIS_URL: str = ""
+    CELERY_BROKER_URL: str = ""
+    CELERY_RESULT_BACKEND: str = ""
+
+    # Stripe billing
+    STRIPE_SECRET_KEY: str = ""
+    STRIPE_WEBHOOK_SECRET: str = ""
+    STRIPE_PRICE_STARTER: str = ""
+    STRIPE_PRICE_GROWTH: str = ""
+    STRIPE_PRICE_SCALE: str = ""
+
+    # Observability
+    POSTHOG_API_KEY: str = ""
+    POSTHOG_HOST: str = "https://us.i.posthog.com"
+
+    @property
+    def celery_broker(self) -> str:
+        return self.CELERY_BROKER_URL or self.REDIS_URL
+
+    @property
+    def celery_backend(self) -> str:
+        return self.CELERY_RESULT_BACKEND or self.REDIS_URL
+
     @property
     def sqlalchemy_url(self) -> str:
         """Resolve the DB URL, defaulting to a local SQLite file for dev/tests."""

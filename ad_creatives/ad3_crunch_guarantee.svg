@@ -1,0 +1,23 @@
+<svg width="1080" height="1080" viewBox="0 0 1080 1080" xmlns="http://www.w3.org/2000/svg">
+<rect width="1080" height="1080" fill="#211C18"/>
+
+<text x="72" y="96" font-family="Lato" font-weight="900" font-size="44" letter-spacing="6" fill="#FAF3E6">MAKHANIX</text>
+<text x="72" y="130" font-family="Lato" font-weight="700" font-size="22" letter-spacing="2" fill="#FAF3E6" opacity="0.65">CRUNCH BETTER. SNACK SMARTER.</text>
+<text x="540" y="230" font-family="Lato" font-weight="900" font-size="88" fill="#FAF3E6" text-anchor="middle">Soggy is a scam.</text>
+
+<polygon points="775,470 744,490 770,516 736,530 757,560 721,567 735,601 698,600 706,636 670,628 671,665 637,651 630,687 600,666 586,700 560,674 540,705 520,674 494,700 480,666 450,687 443,651 409,665 410,628 374,636 382,600 345,601 359,567 323,560 344,530 310,516 336,490 305,470 336,450 310,424 344,410 323,380 359,373 345,339 382,340 374,304 410,312 409,275 443,289 450,253 480,274 494,240 520,266 540,235 560,266 586,240 600,274 630,253 637,289 671,275 670,312 706,304 698,340 735,339 721,373 757,380 736,410 770,424 744,450" fill="#F5C33B"/>
+<circle cx="540" cy="470" r="192" fill="#E8442E" stroke="#FAF3E6" stroke-width="6"/>
+<text x="540" y="415" font-family="Lato" font-weight="900" font-size="52" fill="#FFFFFF" text-anchor="middle" letter-spacing="2">CRUNCH</text>
+<text x="540" y="472" font-family="Lato" font-weight="900" font-size="52" fill="#FFFFFF" text-anchor="middle" letter-spacing="2">GUARANTEED</text>
+<rect x="418" y="496" width="244" height="4" fill="#F5C33B"/>
+<text x="540" y="540" font-family="Lato" font-weight="700" font-size="27" fill="#F5C33B" text-anchor="middle">OR FREE REPLACEMENT</text>
+<text x="540" y="578" font-family="Lato" font-weight="700" font-size="22" fill="#FFFFFF" text-anchor="middle" opacity="0.85">no questions asked</text>
+<g transform="translate(540,760)">
+<rect x="-240" y="0" width="480" height="60" rx="30" fill="#FAF3E6"/>
+<text x="0" y="40" font-family="Lato" font-weight="900" font-size="28" fill="#211C18" text-anchor="middle">PACKED ON: 04 JUL 2026</text>
+</g>
+<text x="540" y="878" font-family="Lato" font-weight="700" font-size="27" fill="#FAF3E6" text-anchor="middle" opacity="0.85">Sealed for crunch &#183; If it doesn&#8217;t snap, we replace it free</text>
+<rect x="260.0" y="950" width="560" height="88" rx="44" fill="#F5C33B"/>
+<text x="540" y="1007" font-family="Lato" font-weight="900" font-size="36" fill="#211C18" text-anchor="middle">ORDER RISK-FREE &#183; COD</text>
+<text x="540" y="1064" font-family="Lato" font-weight="700" font-size="22" fill="#FAF3E6" text-anchor="middle" opacity="0.55">India&#8217;s only crunch guarantee &#183; makhanix.in</text>
+</svg>

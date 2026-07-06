@@ -4,13 +4,13 @@ import { Loader2, LogOut, Menu, X } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { Fragment, useEffect, useState } from "react";
 import { Logo } from "@/components/logo";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { useAuth } from "@/lib/auth";
 import { cn } from "@/lib/utils";
 
-export type NavItem = { href: string; label: string; icon: LucideIcon };
+export type NavItem = { href: string; label: string; icon: LucideIcon; section?: string };
 
 export function Shell({
   nav,
@@ -41,7 +41,14 @@ export function Shell({
     );
   }
 
-  const active = (href: string) => pathname === href || (href !== nav[0].href && pathname.startsWith(href));
+  const active = (href: string) => {
+    if (pathname === href) return true;
+    if (!pathname.startsWith(`${href}/`)) return false;
+    // only highlight the deepest matching nav entry
+    return !nav.some(
+      (n) => n.href !== href && n.href.length > href.length && (pathname === n.href || pathname.startsWith(`${n.href}/`)),
+    );
+  };
 
   return (
     <div className="min-h-screen">
@@ -56,24 +63,30 @@ export function Shell({
           <Logo />
           <button onClick={() => setOpen(false)} className="lg:hidden"><X className="h-5 w-5" /></button>
         </div>
-        <nav className="flex flex-col gap-0.5 p-3">
+        <nav className="flex h-[calc(100vh-4rem)] flex-col gap-0.5 overflow-y-auto p-3">
           {role === "ADMIN" && (
             <div className="px-3 pb-2 pt-1 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">Admin Console</div>
           )}
-          {nav.map((item) => (
-            <Link
-              key={item.href}
-              href={item.href}
-              className={cn(
-                "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
-                active(item.href)
-                  ? "bg-primary/10 text-primary"
-                  : "text-muted-foreground hover:bg-muted hover:text-foreground",
+          {nav.map((item, idx) => (
+            <Fragment key={item.href}>
+              {item.section && (idx === 0 || nav[idx - 1].section !== item.section) && (
+                <div className="px-3 pb-1.5 pt-4 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
+                  <span className="bg-gradient-to-r from-violet-500 to-indigo-400 bg-clip-text text-transparent">{item.section}</span>
+                </div>
               )}
-            >
-              <item.icon className="h-4 w-4" />
-              {item.label}
-            </Link>
+              <Link
+                href={item.href}
+                className={cn(
+                  "flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors",
+                  active(item.href)
+                    ? "bg-primary/10 text-primary"
+                    : "text-muted-foreground hover:bg-muted hover:text-foreground",
+                )}
+              >
+                <item.icon className="h-4 w-4" />
+                {item.label}
+              </Link>
+            </Fragment>
           ))}
         </nav>
       </aside>

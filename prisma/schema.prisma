@@ -624,3 +624,341 @@ model AuditLog {
   @@index([userId])
   @@map("audit_logs")
 }
+
+// ============================================================================
+// Aether AI — "The AI Media Buyer That Never Sleeps."
+// New platform tables (migration 0002_aether). These models intentionally use
+// scalar clientId references (FKs are enforced in the SQL migration) to keep
+// the legacy CRUX models untouched. embedding_chunks additionally carries a
+// pgvector `embedding_vec vector(1024)` column managed outside Prisma.
+// ============================================================================
+
+model BusinessProfile {
+  id              String   @id @default(uuid())
+  clientId        String   @map("client_id")
+  websiteUrl      String?  @map("website_url")
+  inputs          Json?
+  status          String   @default("PENDING")
+  summary         String?
+  usp             String?
+  positioning     String?
+  brandVoice      String?  @map("brand_voice")
+  visualStyle     String?  @map("visual_style")
+  offers          Json?
+  priceAnalysis   Json?    @map("price_analysis")
+  strengths       Json?
+  weaknesses      Json?
+  customerJourney Json?    @map("customer_journey")
+  salesFunnel     Json?    @map("sales_funnel")
+  painPoints      Json?    @map("pain_points")
+  desires         Json?
+  idealCustomers  Json?    @map("ideal_customers")
+  raw             Json?
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  @@index([clientId])
+  @@map("business_profiles")
+}
+
+model CompetitorProfile {
+  id              String    @id @default(uuid())
+  clientId        String    @map("client_id")
+  name            String
+  website         String?
+  discoveredVia   String    @default("ai") @map("discovered_via")
+  threatLevel     String    @default("MEDIUM") @map("threat_level")
+  pricing         Json?
+  offers          Json?
+  creativeAngles  Json?     @map("creative_angles")
+  headlines       Json?
+  funnels         Json?
+  reviewsSummary  Json?     @map("reviews_summary")
+  ads             Json?
+  seo             Json?
+  contentStrategy Json?     @map("content_strategy")
+  emailFunnels    Json?     @map("email_funnels")
+  swot            Json?
+  positioningGap  String?   @map("positioning_gap")
+  lastAnalyzedAt  DateTime? @map("last_analyzed_at")
+  createdAt       DateTime  @default(now()) @map("created_at")
+
+  @@index([clientId])
+  @@map("competitor_profiles")
+}
+
+model Persona {
+  id                String   @id @default(uuid())
+  clientId          String   @map("client_id")
+  name              String
+  segment           String?
+  awarenessLevel    String   @default("problem_aware") @map("awareness_level")
+  sophistication    Int      @default(3)
+  purchaseIntent    String   @default("MEDIUM") @map("purchase_intent")
+  pains             Json?
+  fears             Json?
+  dreamOutcome      Json?    @map("dream_outcome")
+  objections        Json?
+  buyingTriggers    Json?    @map("buying_triggers")
+  identity          Json?
+  lifestyle         Json?
+  language          Json?
+  behavior          Json?
+  jobsToBeDone      Json?    @map("jobs_to_be_done")
+  emotionalTriggers Json?    @map("emotional_triggers")
+  targeting         Json?
+  createdAt         DateTime @default(now()) @map("created_at")
+
+  @@index([clientId])
+  @@map("personas")
+}
+
+model ResearchJob {
+  id              String    @id @default(uuid())
+  clientId        String    @map("client_id")
+  query           String
+  sources         Json
+  status          String    @default("PENDING")
+  results         Json?
+  summary         String?
+  insights        Json?
+  voiceOfCustomer Json?     @map("voice_of_customer")
+  createdAt       DateTime  @default(now()) @map("created_at")
+  finishedAt      DateTime? @map("finished_at")
+
+  @@index([clientId])
+  @@map("research_jobs")
+}
+
+model KnowledgeDocument {
+  id         String   @id @default(uuid())
+  clientId   String   @map("client_id")
+  namespace  String   @default("general")
+  title      String
+  sourceType String   @default("text") @map("source_type")
+  sourceUrl  String?  @map("source_url")
+  content    String
+  meta       Json?
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  chunks EmbeddingChunk[]
+
+  @@index([clientId, namespace])
+  @@map("knowledge_documents")
+}
+
+model EmbeddingChunk {
+  id         String   @id @default(uuid())
+  documentId String   @map("document_id")
+  clientId   String   @map("client_id")
+  namespace  String   @default("general")
+  chunkIndex Int      @default(0) @map("chunk_index")
+  content    String
+  tokenCount Int      @default(0) @map("token_count")
+  embedding  Json?
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  document KnowledgeDocument @relation(fields: [documentId], references: [id], onDelete: Cascade)
+
+  @@index([clientId, namespace])
+  @@map("embedding_chunks")
+}
+
+model CreativeAsset {
+  id             String   @id @default(uuid())
+  clientId       String   @map("client_id")
+  personaId      String?  @map("persona_id")
+  batchId        String?  @map("batch_id")
+  kind           String
+  framework      String   @default("AIDA")
+  content        String
+  meta           Json?
+  predictedScore Float    @default(0) @map("predicted_score")
+  status         String   @default("DRAFT")
+  performance    Json?
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  @@index([clientId, kind])
+  @@map("creative_assets")
+}
+
+model VisualAnalysis {
+  id              String   @id @default(uuid())
+  clientId        String   @map("client_id")
+  assetUrl        String   @map("asset_url")
+  kind            String   @default("image")
+  creativeScore   Int      @default(0) @map("creative_score")
+  attentionScore  Int      @default(0) @map("attention_score")
+  scrollStopScore Int      @default(0) @map("scroll_stop_score")
+  brandScore      Int      @default(0) @map("brand_score")
+  emotionScore    Int      @default(0) @map("emotion_score")
+  ctrPrediction   Float    @default(0) @map("ctr_prediction")
+  recommendations Json?
+  raw             Json?
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  @@index([clientId])
+  @@map("visual_analyses")
+}
+
+model CampaignBlueprint {
+  id               String   @id @default(uuid())
+  clientId         String   @map("client_id")
+  name             String
+  objective        String   @default("OUTCOME_SALES")
+  status           String   @default("DRAFT")
+  dailyBudget      Float    @default(0) @map("daily_budget")
+  structure        Json?
+  naming           Json?
+  budgetPlan       Json?    @map("budget_plan")
+  audienceStrategy Json?    @map("audience_strategy")
+  placements       Json?
+  pixelMapping     Json?    @map("pixel_mapping")
+  creativeRotation Json?    @map("creative_rotation")
+  scalingPlan      Json?    @map("scaling_plan")
+  publishedIds     Json?    @map("published_ids")
+  rationale        String?
+  createdAt        DateTime @default(now()) @map("created_at")
+  updatedAt        DateTime @updatedAt @map("updated_at")
+
+  @@index([clientId])
+  @@map("campaign_blueprints")
+}
+
+model AgentRun {
+  id         String    @id @default(uuid())
+  clientId   String    @map("client_id")
+  kind       String
+  status     String    @default("PENDING")
+  input      Json?
+  steps      Json?
+  messages   Json?
+  votes      Json?
+  decision   Json?
+  error      String?
+  tokensIn   Int       @default(0) @map("tokens_in")
+  tokensOut  Int       @default(0) @map("tokens_out")
+  costUsd    Float     @default(0) @map("cost_usd")
+  startedAt  DateTime? @map("started_at")
+  finishedAt DateTime? @map("finished_at")
+  createdAt  DateTime  @default(now()) @map("created_at")
+
+  @@index([clientId, kind])
+  @@map("agent_runs")
+}
+
+model UsageLedger {
+  id        String   @id @default(uuid())
+  clientId  String?  @map("client_id")
+  date      DateTime @db.Date
+  provider  String
+  model     String
+  tokensIn  Int      @default(0) @map("tokens_in")
+  tokensOut Int      @default(0) @map("tokens_out")
+  costUsd   Float    @default(0) @map("cost_usd")
+  kind      String   @default("llm")
+
+  @@index([clientId, date])
+  @@map("usage_ledger")
+}
+
+model Prediction {
+  id              String   @id @default(uuid())
+  clientId        String   @map("client_id")
+  entityType      String   @map("entity_type")
+  entityId        String   @map("entity_id")
+  ctr             Float    @default(0)
+  cvr             Float    @default(0)
+  cpa             Float    @default(0)
+  roas            Float    @default(0)
+  creativeQuality Float    @default(0) @map("creative_quality")
+  winProbability  Float    @default(0) @map("win_probability")
+  audienceMatch   Float    @default(0) @map("audience_match")
+  features        Json?
+  modelVersion    String   @default("heuristic-v1") @map("model_version")
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  @@index([entityType, entityId])
+  @@map("predictions")
+}
+
+model CampaignScoreCard {
+  id          String  @id @default(uuid())
+  clientId    String  @map("client_id")
+  campaignId  String? @map("campaign_id")
+  blueprintId String? @map("blueprint_id")
+  date        DateTime @db.Date
+  overall     Int     @default(0)
+  creative    Int     @default(0)
+  audience    Int     @default(0)
+  offer       Int     @default(0)
+  landingPage Int     @default(0) @map("landing_page")
+  tracking    Int     @default(0)
+  brand       Int     @default(0)
+  scaling     Int     @default(0)
+  details     Json?
+
+  @@index([clientId])
+  @@map("campaign_scores")
+}
+
+model FatigueSignal {
+  id             String   @id @default(uuid())
+  clientId       String   @map("client_id")
+  entityType     String   @map("entity_type")
+  entityRef      String   @map("entity_ref")
+  fatigueType    String   @map("fatigue_type")
+  severity       String   @default("WARNING")
+  evidence       Json?
+  recommendation String?
+  resolved       Boolean  @default(false)
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  @@index([clientId, resolved])
+  @@map("fatigue_signals")
+}
+
+model OptimizationAction {
+  id             String    @id @default(uuid())
+  clientId       String    @map("client_id")
+  campaignId     String?   @map("campaign_id")
+  campaignRef    String    @map("campaign_ref")
+  action         String
+  amount         Json?
+  reason         String
+  confidence     Float     @default(0.5)
+  expectedImpact String?   @map("expected_impact")
+  status         String    @default("PROPOSED")
+  appliedAt      DateTime? @map("applied_at")
+  createdAt      DateTime  @default(now()) @map("created_at")
+
+  @@index([clientId, status])
+  @@map("optimization_actions")
+}
+
+model AutomationRun {
+  id        String   @id @default(uuid())
+  clientId  String?  @map("client_id")
+  kind      String
+  status    String   @default("DONE")
+  output    Json?
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([kind, createdAt])
+  @@map("automation_runs")
+}
+
+model Subscription {
+  id                   String    @id @default(uuid())
+  clientId             String    @unique @map("client_id")
+  stripeCustomerId     String?   @map("stripe_customer_id")
+  stripeSubscriptionId String?   @map("stripe_subscription_id")
+  plan                 String    @default("STARTER")
+  status               String    @default("TRIALING")
+  currentPeriodEnd     DateTime? @map("current_period_end")
+  meta                 Json?
+  createdAt            DateTime  @default(now()) @map("created_at")
+  updatedAt            DateTime  @updatedAt @map("updated_at")
+
+  @@map("subscriptions")
+}

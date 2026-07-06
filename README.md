@@ -12,6 +12,21 @@ performance, SEO, growth reports and AI insights — from one beautiful dashboar
 
 ---
 
+## 🧠 Aether AI — The AI Media Buyer That Never Sleeps
+
+CRUX now ships with **Aether AI**: a full AI media-buying operating system layered on
+the portal. Ten AI modules (business intelligence, competitor intelligence, audience
+personas, creative generation across 13 frameworks, visual scoring, campaign builder
+with Meta publishing, performance analyst, fatigue detection, budget optimizer,
+market research), an 11-agent council that debates and votes on strategy, per-client
+RAG memory on pgvector, predictive CTR/ROAS models, 8-dimension campaign scoring,
+morning-briefing automations on Celery, and Stripe plan gating. Everything runs with
+**zero API keys** (deterministic mock mode) and upgrades to OpenAI / Anthropic /
+Gemini / Meta / Stripe the moment keys are added. Full docs: [`docs/AETHER.md`](docs/AETHER.md).
+Open the dashboard → **Aether AI** section (12 module pages under `/dashboard/aether`).
+
+---
+
 ## ✨ Overview
 
 CRUX is a full-stack SaaS application split into a **Next.js 15** frontend and a

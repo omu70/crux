@@ -1,0 +1,61 @@
+<svg width="1080" height="1080" viewBox="0 0 1080 1080" xmlns="http://www.w3.org/2000/svg">
+<rect width="1080" height="1080" fill="#FAF3E6"/>
+
+<text x="72" y="96" font-family="Lato" font-weight="900" font-size="44" letter-spacing="6" fill="#211C18">MAKHANIX</text>
+<text x="72" y="130" font-family="Lato" font-weight="700" font-size="22" letter-spacing="2" fill="#211C18" opacity="0.65">CRUNCH BETTER. SNACK SMARTER.</text>
+<text x="1008" y="96" font-family="Lato" font-weight="900" font-size="40" fill="#E8442E" text-anchor="end">BINGE BETTER.</text>
+<text x="1008" y="132" font-family="Lato" font-weight="700" font-size="24" fill="#211C18" text-anchor="end" opacity="0.7">Same crunch. 80% fewer calories.</text>
+
+<rect x="0" y="180" width="540" height="640" fill="#211C18"/>
+<g transform="translate(270,420) rotate(-8)">
+<rect x="-120" y="-150" width="240" height="300" rx="14" fill="#3A342E" stroke="#57504A" stroke-width="5"/>
+<path d="M -120 -150 L 120 -150 L 108 -122 L -108 -122 Z" fill="#57504A"/>
+<path d="M -120 150 L 120 150 L 108 122 L -108 122 Z" fill="#57504A"/>
+<text x="0" y="-45" font-family="Lato" font-weight="900" font-size="42" fill="#8A8178" text-anchor="middle">CHIPS</text>
+<ellipse cx="0" cy="55" rx="75" ry="48" fill="#57504A"/>
+<text x="0" y="66" font-family="Lato" font-weight="700" font-size="26" fill="#8A8178" text-anchor="middle">60% air</text>
+</g>
+<ellipse cx="270" cy="640" rx="120" ry="26" fill="#000000" opacity="0.35"/>
+<text x="270" y="720" font-family="Lato" font-weight="900" font-size="96" fill="#8A8178" text-anchor="middle">550</text>
+<text x="270" y="768" font-family="Lato" font-weight="700" font-size="30" fill="#8A8178" text-anchor="middle" letter-spacing="4">CALORIES OF OIL</text>
+<rect x="540" y="180" width="540" height="640" fill="#FAF3E6"/>
+<g transform="translate(810,430) scale(0.92)">
+<rect x="-150" y="-230" width="300" height="60" rx="18" fill="#211C18"/>
+<rect x="-138" y="-176" width="276" height="18" fill="#00000022"/>
+<path d="M -160 -160 Q -170 -60 -160 120 Q -155 175 -95 180 L 95 180 Q 155 175 160 120 Q 170 -60 160 -160 Z" fill="#F7EAD4" stroke="#211C18" stroke-width="6"/>
+<rect x="-160" y="-40" width="320" height="150" fill="#E8442E"/>
+<text x="0" y="10" font-family="Lato" font-weight="900" font-size="40" fill="#FFFFFF" text-anchor="middle" letter-spacing="1">MAKHANIX</text>
+<text x="0" y="62" font-family="Lato" font-weight="900" font-size="30" fill="#F5C33B" text-anchor="middle" letter-spacing="3">PERI PERI</text>
+<circle cx="-53" cy="-103" r="13" fill="#F0DFC0" stroke="#D9C29A" stroke-width="3"/>
+<circle cx="-56" cy="-106" r="3" fill="#FFFFFF" opacity="0.7"/>
+<circle cx="2" cy="-75" r="15" fill="#F0DFC0" stroke="#D9C29A" stroke-width="3"/>
+<circle cx="-2" cy="-79" r="3" fill="#FFFFFF" opacity="0.7"/>
+<circle cx="74" cy="-77" r="16" fill="#F0DFC0" stroke="#D9C29A" stroke-width="3"/>
+<circle cx="70" cy="-81" r="3" fill="#FFFFFF" opacity="0.7"/>
+<circle cx="-23" cy="-95" r="17" fill="#F0DFC0" stroke="#D9C29A" stroke-width="3"/>
+<circle cx="-27" cy="-100" r="4" fill="#FFFFFF" opacity="0.7"/>
+<circle cx="-4" cy="-109" r="15" fill="#F0DFC0" stroke="#D9C29A" stroke-width="3"/>
+<circle cx="-8" cy="-114" r="3" fill="#FFFFFF" opacity="0.7"/>
+<circle cx="6" cy="-59" r="13" fill="#F0DFC0" stroke="#D9C29A" stroke-width="3"/>
+<circle cx="3" cy="-63" r="3" fill="#FFFFFF" opacity="0.7"/>
+<circle cx="-43" cy="-117" r="13" fill="#F0DFC0" stroke="#D9C29A" stroke-width="3"/>
+<circle cx="-46" cy="-121" r="3" fill="#FFFFFF" opacity="0.7"/>
+<circle cx="85" cy="-85" r="18" fill="#F0DFC0" stroke="#D9C29A" stroke-width="3"/>
+<circle cx="80" cy="-90" r="4" fill="#FFFFFF" opacity="0.7"/>
+<circle cx="31" cy="-84" r="18" fill="#F0DFC0" stroke="#D9C29A" stroke-width="3"/>
+<circle cx="26" cy="-89" r="4" fill="#FFFFFF" opacity="0.7"/>
+<circle cx="15" cy="-78" r="15" fill="#F0DFC0" stroke="#D9C29A" stroke-width="3"/>
+<circle cx="11" cy="-83" r="3" fill="#FFFFFF" opacity="0.7"/>
+<circle cx="-13" cy="-122" r="13" fill="#F0DFC0" stroke="#D9C29A" stroke-width="3"/>
+<circle cx="-16" cy="-126" r="3" fill="#FFFFFF" opacity="0.7"/>
+<circle cx="42" cy="-108" r="13" fill="#F0DFC0" stroke="#D9C29A" stroke-width="3"/>
+<circle cx="39" cy="-112" r="3" fill="#FFFFFF" opacity="0.7"/>
+</g>
+<text x="810" y="720" font-family="Lato" font-weight="900" font-size="96" fill="#E8442E" text-anchor="middle">105</text>
+<text x="810" y="768" font-family="Lato" font-weight="700" font-size="30" fill="#211C18" text-anchor="middle" letter-spacing="4">CALORIES OF CRUNCH</text><circle cx="540" cy="500" r="64" fill="#F5C33B" stroke="#211C18" stroke-width="8"/>
+<text x="540" y="518" font-family="Lato" font-weight="900" font-size="48" fill="#211C18" text-anchor="middle">VS</text>
+<text x="540" y="878" font-family="Lato" font-weight="700" font-size="27" fill="#211C18" text-anchor="middle" opacity="0.8">Air-roasted, never fried &#183; No palm oil &#183; No MSG &#183; per 30g serving</text>
+<rect x="260.0" y="950" width="560" height="88" rx="44" fill="#E8442E"/>
+<text x="540" y="1007" font-family="Lato" font-weight="900" font-size="36" fill="#FFFFFF" text-anchor="middle">TRY 3 FLAVOURS @ &#8377;499  &#8594;</text>
+<text x="540" y="1064" font-family="Lato" font-weight="700" font-size="22" fill="#211C18" text-anchor="middle" opacity="0.55">Free shipping &#183; COD available &#183; makhanix.in</text>
+</svg>

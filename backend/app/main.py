@@ -12,7 +12,7 @@ from fastapi.staticfiles import StaticFiles
 from app.core.config import settings
 from app.core.database import init_db
 from app.core.rate_limit import RateLimitMiddleware
-from app.routers import admin, auth, clients, collab, dashboard, insights, marketing
+from app.routers import admin, aether, auth, clients, collab, dashboard, insights, marketing
 
 logging.basicConfig(level=logging.INFO)
 
@@ -45,6 +45,7 @@ app.include_router(insights.router)
 app.include_router(collab.router)
 app.include_router(clients.router)
 app.include_router(admin.router)
+app.include_router(aether.router)
 
 
 @app.on_event("startup")
