@@ -1,9 +1,9 @@
 "use client";
 
 import {
-  Bot, Brain, CheckSquare, Eye, FileText, FolderOpen, Search, Settings as SettingsIcon,
-  LayoutDashboard, LifeBuoy, LineChart, MessageSquare, Megaphone, PenTool, Rocket,
-  ShoppingCart, SlidersHorizontal, Sparkles, Swords, Target, Users,
+  Bot, CheckSquare, FileText, FolderOpen, Search, Settings as SettingsIcon,
+  LayoutDashboard, LifeBuoy, LineChart, MessageSquare, Megaphone,
+  ShoppingCart, Target,
 } from "lucide-react";
 import { Shell, type NavItem } from "@/components/dashboard/shell";
 
@@ -21,18 +21,7 @@ const nav: NavItem[] = [
   { href: "/dashboard/support", label: "Support", icon: LifeBuoy },
   { href: "/dashboard/chat", label: "Messages", icon: MessageSquare },
   { href: "/dashboard/settings", label: "Settings", icon: SettingsIcon },
-  // ── Aether AI — the AI media buyer that never sleeps ──────────────────────
-  { href: "/dashboard/aether", label: "Command Center", icon: Sparkles, section: "Aether AI" },
-  { href: "/dashboard/aether/business", label: "Business Intel", icon: Brain, section: "Aether AI" },
-  { href: "/dashboard/aether/competitors", label: "Competitors", icon: Swords, section: "Aether AI" },
-  { href: "/dashboard/aether/audience", label: "Audience", icon: Users, section: "Aether AI" },
-  { href: "/dashboard/aether/studio", label: "Creative Studio", icon: PenTool, section: "Aether AI" },
-  { href: "/dashboard/aether/visual", label: "Visual AI", icon: Eye, section: "Aether AI" },
-  { href: "/dashboard/aether/launch", label: "Launch", icon: Rocket, section: "Aether AI" },
-  { href: "/dashboard/aether/performance", label: "Performance", icon: LineChart, section: "Aether AI" },
-  { href: "/dashboard/aether/optimizer", label: "Optimizer", icon: SlidersHorizontal, section: "Aether AI" },
-  { href: "/dashboard/aether/research", label: "Research", icon: Search, section: "Aether AI" },
-  { href: "/dashboard/aether/council", label: "AI Council", icon: Bot, section: "Aether AI" },
+  // ── Aether AI — hidden from the client portal for now (admin/internal only) ──
 ];
 
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
